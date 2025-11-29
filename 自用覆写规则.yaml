@@ -180,13 +180,6 @@ proxy-groups:
       - 手动选择
       - 其他国家节点
 
-  - name: E-Hentai
-    icon: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/icons/Ehentai.png
-    type: select
-    proxies:
-      - 美国节点
-      - 选择代理
-
   - name: 广告拦截
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/AdBlack.png
     type: select
@@ -199,7 +192,7 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png
     include-all: true
     filter: (?i)香港|港|HK|hk|Hong Kong|HongKong|hongkong|🇭🇰
-    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    #exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
     type: url-test
     url: http://www.gstatic.com/generate_204
     interval: 300
@@ -211,7 +204,7 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png
     include-all: true
     filter: (?i)台|新北|彰化|TW|Taiwan|🇹🇼
-    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+   # exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
     type: url-test
     url: http://www.gstatic.com/generate_204
     interval: 300
@@ -223,7 +216,7 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Singapore.png
     include-all: true
     filter: (?i)新加坡|坡|狮城|SG|Singapore|🇸🇬
-    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    #exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
     type: url-test
     url: http://www.gstatic.com/generate_204
     interval: 300
@@ -235,7 +228,7 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Japan.png
     include-all: true
     filter: (?i)日本|川日|东京|大阪|泉日|埼玉|沪日|深日|JP|Japan|🇯🇵
-    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+   # exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
     type: url-test
     url: http://www.gstatic.com/generate_204
     interval: 300
@@ -247,7 +240,7 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png
     include-all: true
     filter: (?i)美国|美|US|United States|🇺🇸
-    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+   # exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
     type: url-test
     url: http://www.gstatic.com/generate_204
     interval: 300
@@ -258,8 +251,7 @@ proxy-groups:
   - name: 其他国家节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bot.png
     include-all: true
-    filter: (?i)澳大利亚|加拿大|德国|英国|印度|越南
-    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    exclude-filter: "(?i)香港|Hong Kong|HK|日本|Japan|JP|台湾|Taiwan|TW|中国|China|CN|美国|United States|US|新加坡|Singapore|SG|"
     type: url-test
     url: http://www.gstatic.com/generate_204
     interval: 300
@@ -277,7 +269,6 @@ proxy-groups:
       - OpenAI
       - Telegram
       - YouTube
-      - E-Hentai
       - 广告拦截
       - 香港节点
       - 台湾节点
@@ -330,6 +321,13 @@ rule-providers:
     interval: 86400
     url: https://fastly.jsdelivr.net/gh/szkane/ClashRuleSet@main/Clash/Ruleset/AiDomain.list
     path: ./ruleset/AiDomain.list
+  DMM:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/DMM/DMM.list
+    path: ./DMM/DMM.list
 
 # === 分流规则 ===
 rules:
@@ -341,25 +339,29 @@ rules:
   - RULE-SET,AdditionalFilter,广告拦截
 
   # 2. 特殊应用
-  - RULE-SET,EHentai,E-Hentai
-  - RULE-SET,SteamFix,DIRECT
+  - RULE-SET,EHentai,美国节点
+  - RULE-SET,DMM,日本节点
   - RULE-SET,GoogleFCM,选择代理
   - RULE-SET,OpenAI,OpenAI
+  - RULE-SET,SteamFix,DIRECT
 
-  # 3. GeoSite 规则 (域名类)
+  # 3. 自定义域名
+  - DOMAIN-SUFFIX,hxcy.top,新加坡节点
+
+  # 4. GeoSite 规则 (域名类)
   - GEOSITE,TELEGRAM,Telegram
   - GEOSITE,YOUTUBE,YouTube
+  - GEOSITE,GFW,选择代理
   - GEOSITE,BILIBILI,DIRECT
   - GEOSITE,MICROSOFT@CN,DIRECT
   - GEOSITE,APPLE,DIRECT
-  - GEOSITE,GFW,选择代理
   - GEOSITE,CN,DIRECT
   - GEOSITE,PRIVATE,DIRECT
 
-  # 4. GeoIP 规则 (IP类，作为兜底)
+  # 5. GeoIP 规则 (IP类，作为兜底)
   - GEOIP,TELEGRAM,Telegram
   - GEOIP,CN,DIRECT
   - GEOIP,PRIVATE,DIRECT
 
-  # 5. 最终兜底
+  # 6. 最终兜底
   - MATCH,选择代理
