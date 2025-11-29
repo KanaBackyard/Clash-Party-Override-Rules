@@ -1,0 +1,365 @@
+# 实验性功能: TCP 并发连接 (提高握手成功率)
+experimental:
+  tcp-concurrent: true
+
+# === DNS 配置 ===
+dns:
+  enable: true
+  ipv6: false
+  prefer-h3: true            # 优先使用 DoH 的 HTTP/3
+  use-system-hosts: true     # 使用系统 hosts 文件
+  enhanced-mode: fake-ip     # 增强模式: Fake-IP (速度最快)
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter-mode: blacklist
+  respect-rules: true        # 仅当规则未命中(需要IP匹配)时才进行DNS解析
+
+  # === 默认 DNS (解析国外域名) ===
+  nameserver:
+    - "https://1.1.1.1/dns-query"
+    - "https://8.8.8.8/dns-query"
+    - "https://dns.sb/dns-query"
+
+  # === 备用 DNS (Fallback) ===
+  fallback:
+    - "https://cloudflare-dns.com/dns-query"
+    - "https://dns.google/dns-query"
+    - "tls://8.8.4.4"
+    - "tls://1.1.1.1"
+
+  # === 备用 DNS 启用条件 (防污染) ===
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+      - 240.0.0.0/4
+    domain:
+      - "+.google.com"
+      - "+.facebook.com"
+      - "+.twitter.com"
+      - "+.youtube.com"
+
+  # === 核心策略: DNS 分流 ===
+  nameserver-policy:
+    # 1. 微软/NTP/STUN -> 走本地系统 DNS (确保连通性检测通过)
+    "dns.msftncsi.com": system
+    "www.msftncsi.com": system
+    "www.msftconnecttest.com": system
+    "pool.ntp.org": system
+    "time.*.com": system
+    "stun.*": system
+
+    # 2. 苹果/游戏/国内 -> 阿里 DNS
+    "geosite:apple,category-games@cn,cn,private":
+      - tls://223.5.5.5
+      - https://223.5.5.5/dns-query
+
+  # === 代理节点 DNS (解析机场域名) ===
+  proxy-server-nameserver:
+    - "223.5.5.5"
+    - "119.29.29.29"
+
+  # === Fake-IP 过滤列表 (返回真实 IP) ===
+  # 作用: 解决由 Fake-IP 导致的局域网无法访问、游戏 NAT 类型严格等问题
+  fake-ip-filter:
+    # --- 局域网 & 路由器 ---
+    - +.lan
+    - +.local
+    - +.internal
+    - +.localdomain
+    - +.home.arpa
+    - +.bogon
+    - +.m2m
+    # --- AdGuard & 安全 ---
+    - injections.adguard.org
+    - local.adguard.org
+    # --- Windows 网络探测 ---
+    - dns.msftncsi.com
+    - www.msftncsi.com
+    - www.msftconnecttest.com
+    # --- Google/Android 网络探测 ---
+    - connectivitycheck.gstatic.com
+    - connectivitycheck.android.com
+    # --- 游戏 STUN & NAT 优化 ---
+    - "*.srv.nintendo.net"
+    - "*.stun.playstation.net"
+    - xbox.*.microsoft.com
+    - "*.xboxlive.com"
+    - "*.battlenet.com.cn"
+    - "*.turn.twilio.com"
+    - "*.stun.twilio.com"
+    - stun.syncthing.net
+    - stun.*
+    # --- NTP 时间同步 ---
+    - pool.ntp.org
+    - time.windows.com
+    - time.nist.gov
+    - time.apple.com
+    # --- 开发者 / 泛域名映射 ---
+    - 127.0.0.1.sslip.io
+    - 127.atlas.skk.moe
+    - 127.*.*.*.sslip.io
+    - 127-*-*-*.sslip.io
+    - "*.127.*.*.*.sslip.io"
+    - "*-127-*-*-*.sslip.io"
+    - 127.*.*.*.nip.io
+    - 127-*-*-*.nip.io
+    - "*.127.*.*.*.nip.io"
+    - "*-127-*-*-*.nip.io"
+
+# === 域名嗅探 ===
+sniffer:
+  enable: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - "Mijia Cloud"
+    - "+.push.apple.com"
+
+# === GeoData 模式 ===
+geodata-mode: true
+geox-url:
+  geoip: https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat
+  geosite: https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat
+  mmdb: https://fastly.jsdelivr.net/gh/Loyalsoldier/geoip@release/Country.mmdb
+  asn: https://fastly.jsdelivr.net/gh/Loyalsoldier/geoip@release/GeoLite2-ASN.mmdb
+
+# === 分流组 ===
+proxy-groups:
+  - name: 选择代理
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png
+    type: select
+    proxies:
+      - 香港节点
+      - 台湾节点
+      - 新加坡节点
+      - 日本节点
+      - 美国节点
+      - 手动选择
+      - 其他国家节点
+      - DIRECT
+
+  - name: 手动选择
+    icon: https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash@master/icon/select.png
+    include-all: true
+    type: select
+
+  - name: YouTube
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png
+    type: select
+    proxies:
+      - 香港节点
+      - 台湾节点
+      - 新加坡节点
+      - 日本节点
+      - 美国节点
+      - 手动选择
+      - 其他国家节点
+
+  - name: OpenAI
+    icon: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/icons/chatgpt.png
+    type: select
+    proxies:
+      - 美国节点
+      - 选择代理
+
+  - name: Telegram
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png
+    type: select
+    proxies:
+      - 香港节点
+      - 台湾节点
+      - 新加坡节点
+      - 日本节点
+      - 美国节点
+      - 手动选择
+      - 其他国家节点
+
+  - name: E-Hentai
+    icon: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/icons/Ehentai.png
+    type: select
+    proxies:
+      - 美国节点
+      - 选择代理
+
+  - name: 广告拦截
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/AdBlack.png
+    type: select
+    proxies:
+      - REJECT
+      - REJECT-DROP
+
+  # === 自动测速组 (统一配置: 优化测速机制) ===
+  - name: 香港节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png
+    include-all: true
+    filter: (?i)香港|港|HK|hk|Hong Kong|HongKong|hongkong|🇭🇰
+    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    unified-delay: true  # 开启统一延迟
+    lazy: false          # 香港节点通常作为主力，不偷懒，保持测速活跃
+
+  - name: 台湾节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png
+    include-all: true
+    filter: (?i)台|新北|彰化|TW|Taiwan|🇹🇼
+    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    unified-delay: true
+    lazy: true
+
+  - name: 新加坡节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Singapore.png
+    include-all: true
+    filter: (?i)新加坡|坡|狮城|SG|Singapore|🇸🇬
+    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    unified-delay: true
+    lazy: true
+
+  - name: 日本节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Japan.png
+    include-all: true
+    filter: (?i)日本|川日|东京|大阪|泉日|埼玉|沪日|深日|JP|Japan|🇯🇵
+    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    unified-delay: true
+    lazy: true
+
+  - name: 美国节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png
+    include-all: true
+    filter: (?i)美国|美|US|United States|🇺🇸
+    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    unified-delay: true
+    lazy: true
+
+  - name: 其他国家节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bot.png
+    include-all: true
+    filter: (?i)澳大利亚|加拿大|德国|英国|印度|越南
+    exclude-filter: 0\.[0-5]|低倍率|省流|大流量|实验性
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    unified-delay: true
+    lazy: true
+
+  - name: GLOBAL
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png
+    include-all: true
+    type: select
+    proxies:
+      - 选择代理
+      - 手动选择
+      - OpenAI
+      - Telegram
+      - YouTube
+      - E-Hentai
+      - 广告拦截
+      - 香港节点
+      - 台湾节点
+      - 新加坡节点
+      - 日本节点
+      - 美国节点
+      - 其他国家节点
+
+# === 分流规则提供 ===
+rule-providers:
+  ADBlock:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    url: https://adrules.top/adrules-mihomo.mrs
+    path: ./ruleset/ADBlock.mrs
+  EHentai:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/ruleset/EHentai.list
+    path: ./ruleset/EHentai.list
+  SteamFix:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/ruleset/SteamFix.list
+    path: ./ruleset/SteamFix.list
+  GoogleFCM:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/ruleset/FirebaseCloudMessaging.list
+    path: ./ruleset/FirebaseCloudMessaging.list
+  AdditionalFilter:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/ruleset/AdditionalFilter.list
+    path: ./ruleset/AdditionalFilter.list
+  OpenAI:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://fastly.jsdelivr.net/gh/szkane/ClashRuleSet@main/Clash/Ruleset/AiDomain.list
+    path: ./ruleset/AiDomain.list
+
+# === 分流规则 ===
+rules:
+  # 0. 阻断 QUIC: 强制使用 TCP 协议，保证流量能被代理正确嗅探和加速
+  - AND,(DST-PORT,443),(NETWORK,UDP),REJECT
+  
+  # 1. 广告拦截
+  - RULE-SET,ADBlock,广告拦截
+  - RULE-SET,AdditionalFilter,广告拦截
+
+  # 2. 特殊应用
+  - RULE-SET,EHentai,E-Hentai
+  - RULE-SET,SteamFix,DIRECT
+  - RULE-SET,GoogleFCM,选择代理
+  - RULE-SET,OpenAI,OpenAI
+
+  # 3. GeoSite 规则 (域名类)
+  - GEOSITE,TELEGRAM,Telegram
+  - GEOSITE,YOUTUBE,YouTube
+  - GEOSITE,BILIBILI,DIRECT
+  - GEOSITE,MICROSOFT@CN,DIRECT
+  - GEOSITE,APPLE,DIRECT
+  - GEOSITE,GFW,选择代理
+  - GEOSITE,CN,DIRECT
+  - GEOSITE,PRIVATE,DIRECT
+
+  # 4. GeoIP 规则 (IP类，作为兜底)
+  - GEOIP,TELEGRAM,Telegram
+  - GEOIP,CN,DIRECT
+  - GEOIP,PRIVATE,DIRECT
+
+  # 5. 最终兜底
+  - MATCH,选择代理
