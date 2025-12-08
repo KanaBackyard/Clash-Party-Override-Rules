@@ -1,11 +1,11 @@
-# 实验性功能: TCP 并发连接 (提高握手成功率)
 experimental:
-  tcp-concurrent: true
+  tcp-concurrent: true   #并发 TCP 连接
+  unified-delay: true    #统一延迟测试
 
 # === DNS 配置 ===
 dns:
   enable: true
-  ipv6: false
+  ipv6: true
   prefer-h3: true            # 优先使用 DoH 的 HTTP/3
   use-system-hosts: true     # 使用系统 hosts 文件
   enhanced-mode: fake-ip     # 增强模式: Fake-IP (速度最快)
@@ -161,13 +161,6 @@ proxy-groups:
       - 手动选择
       - 其他国家节点
 
-  - name: OpenAI
-    icon: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/icons/chatgpt.png
-    type: select
-    proxies:
-      - 美国节点
-      - 选择代理
-
   - name: Telegram
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png
     type: select
@@ -266,7 +259,6 @@ proxy-groups:
     proxies:
       - 选择代理
       - 手动选择
-      - OpenAI
       - Telegram
       - YouTube
       - 广告拦截
@@ -314,13 +306,6 @@ rule-providers:
     interval: 86400
     url: https://fastly.jsdelivr.net/gh/powerfullz/override-rules@master/ruleset/AdditionalFilter.list
     path: ./ruleset/AdditionalFilter.list
-  OpenAI:
-    type: http
-    behavior: classical
-    format: text
-    interval: 86400
-    url: https://fastly.jsdelivr.net/gh/szkane/ClashRuleSet@main/Clash/Ruleset/AiDomain.list
-    path: ./ruleset/AiDomain.list
   DMM:
     type: http
     behavior: classical
@@ -342,11 +327,10 @@ rules:
   - RULE-SET,EHentai,美国节点
   - RULE-SET,DMM,日本节点
   - RULE-SET,GoogleFCM,选择代理
-  - RULE-SET,OpenAI,OpenAI
   - RULE-SET,SteamFix,DIRECT
 
   # 3. 自定义域名
-  - DOMAIN-SUFFIX,hxcy.top,新加坡节点
+  - DOMAIN-SUFFIX,hxcy.top,香港节点
 
   # 4. GeoSite 规则 (域名类)
   - GEOSITE,TELEGRAM,Telegram
