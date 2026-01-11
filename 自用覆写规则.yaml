@@ -1,6 +1,6 @@
+# 实验性功能: TCP 并发连接 (提高握手成功率)
 experimental:
-  tcp-concurrent: true   #并发 TCP 连接
-  unified-delay: true    #统一延迟测试
+  tcp-concurrent: true
 
 # === DNS 配置 ===
 dns:
@@ -244,7 +244,7 @@ proxy-groups:
   - name: 其他国家节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bot.png
     include-all: true
-    exclude-filter: "(?i)香港|Hong Kong|HK|日本|Japan|JP|台湾|Taiwan|TW|中国|China|CN|美国|United States|US|新加坡|Singapore|SG|"
+    exclude-filter: "(?i)香港|Hong Kong|HK|日本|Japan|JP|台湾|Taiwan|TW|中国|China|CN|美国|United States|US|新加坡|Singapore|SG|剩余|到期|排除|过滤"
     type: url-test
     url: http://www.gstatic.com/generate_204
     interval: 300
@@ -330,7 +330,8 @@ rules:
   - RULE-SET,SteamFix,DIRECT
 
   # 3. 自定义域名
-  - DOMAIN-SUFFIX,hxcy.top,香港节点
+  - DOMAIN-SUFFIX,hxcy.top,新加坡节点
+
 
   # 4. GeoSite 规则 (域名类)
   - GEOSITE,TELEGRAM,Telegram
