@@ -14,4 +14,6 @@ Gemini评价100分的分流规则不试试吗？好用给个⭐吧~
 
 26.01.12：优化其他国家节点列表，避免筛选错误。
 
+26.04.24：优化本地局域网判断规则，优化谷歌商店下载规则，优化国产路由器访问地址规则。
+
 <img width="751" height="1234" alt="image" src="https://github.com/user-attachments/assets/5b6d2ffb-97a0-41e2-8c2f-2ccfdb5c3aec" />
