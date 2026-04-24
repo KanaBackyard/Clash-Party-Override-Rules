@@ -196,13 +196,6 @@ proxy-groups:
       - 手动选择
       - 其他国家节点
 
-  - name: 广告拦截
-    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/AdBlack.png
-    type: select
-    proxies:
-      - REJECT
-      - REJECT-DROP
-
   # === 自动测速组 (统一配置: 优化测速机制) ===
   - name: 香港节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png
@@ -279,7 +272,6 @@ proxy-groups:
       - 手动选择
       - Telegram
       - YouTube
-      - 广告拦截
       - 香港节点
       - 台湾节点
       - 新加坡节点
@@ -341,8 +333,8 @@ rules:
   - GEOIP,PRIVATE,DIRECT,no-resolve
 
   # 2. 广告拦截
-  - RULE-SET,ADBlock,广告拦截
-  - RULE-SET,AdditionalFilter,广告拦截
+  - RULE-SET,ADBlock,REJECT,no-resolve
+  - RULE-SET,AdditionalFilter,REJECT,no-resolve
 
   # 3. 特殊应用 & 自定义域名
   - RULE-SET,EHentai,美国节点
