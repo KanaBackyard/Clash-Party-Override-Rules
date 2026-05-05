@@ -341,18 +341,16 @@ rules:
   - RULE-SET,DMM,日本节点
   - RULE-SET,GoogleFCM,美国节点
   - RULE-SET,SteamFix,DIRECT
-
   - DOMAIN,services.googleapis.cn,选择代理
 
-  - DOMAIN-SUFFIX,sankakucomplex.com,美国节点
-  - DOMAIN-SUFFIX,hxcy.top,新加坡节点
+  - DOMAIN-SUFFIX,hxcy.top,台湾节点
   - DOMAIN-SUFFIX,f95zone.to,美国节点
-  - DOMAIN-SUFFIX,cdn-akamai-hw-mc.aki-game.net,美国节点
+  - DOMAIN-SUFFIX,aki-game.net,美国节点
 
   - DOMAIN-KEYWORD,xn--ngstr-lra8j.com,选择代理
   - DOMAIN-KEYWORD,perfectworld.com,DIRECT
   - DOMAIN-KEYWORD,kemono,美国节点
-  - DOMAIN-KEYWORD,dlsite.com,日本节点
+  - DOMAIN-KEYWORD,dlsite,日本节点
 
 
   # 5. GeoSite 规则 (域名类)
