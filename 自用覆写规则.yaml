@@ -21,9 +21,9 @@ dns:
 
   # === 备用 DNS (Fallback，专用于解析国外被墙域名，当 nameserver 返回非 CN IP 时，采用这里的无污染结果)
   fallback:
-    - "https://1.1.1.1/dns-query"
-    - "https://8.8.8.8/dns-query"
-    - "https://dns.sb/dns-query"
+    - "https://dns.google/dns-query"
+    - "https://dns.adguard-dns.com/dns-query"
+    - "https://cloudflare-dns.com/dns-query"
     - "tls://8.8.4.4"
 
   # === 备用 DNS 启用条件 (防污染验证机制) ===
@@ -345,11 +345,11 @@ rules:
 
   - DOMAIN-SUFFIX,hxcy.top,台湾节点
   - DOMAIN-SUFFIX,f95zone.to,美国节点
-  - DOMAIN-SUFFIX,aki-game.net,美国节点
+  - DOMAIN-SUFFIX,aki-game.net,新加坡节点
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,选择代理
 
-  - DOMAIN-KEYWORD,xn--ngstr-lra8j.com,选择代理
+
   - DOMAIN-KEYWORD,perfectworld.com,DIRECT
-  - DOMAIN-KEYWORD,kemono,美国节点
   - DOMAIN-KEYWORD,dlsite,日本节点
 
 
