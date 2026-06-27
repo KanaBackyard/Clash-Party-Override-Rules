@@ -21,10 +21,10 @@ dns:
 
   # === 备用 DNS (Fallback，专用于解析国外被墙域名，当 nameserver 返回非 CN IP 时，采用这里的无污染结果)
   fallback:
-    - "https://dns.google/dns-query"
-    - "https://dns.adguard-dns.com/dns-query"
-    - "https://cloudflare-dns.com/dns-query"
+    - "https://1.1.1.1/dns-query"
+    - "https://8.8.8.8/dns-query"
     - "tls://8.8.4.4"
+    - "tls://9.9.9.9"
 
   # === 备用 DNS 启用条件 (防污染验证机制) ===
   fallback-filter:
@@ -34,7 +34,6 @@ dns:
       - 240.0.0.0/4
     domain:
       - "+.google.com"
-      - "+.facebook.com"
       - "+.twitter.com"
       - "+.youtube.com"
 
@@ -109,11 +108,11 @@ dns:
     - stun.*
 
     # --- NTP 时间同步 ---
-    - +.pool.ntp.org       # 统一使用 +. 包含所有 pool
+    - +.pool.ntp.org
     - time.windows.com
     - time.nist.gov
     - time.apple.com
-    - time.asia.apple.com  # 补充苹果亚洲时间服务器
+    - time.asia.apple.com
 
     # --- 开发者 / 泛域名映射 (直接放行根域名，替换原来复杂的通配符) ---
     - +.sslip.io
@@ -341,16 +340,23 @@ rules:
   - RULE-SET,DMM,日本节点
   - RULE-SET,GoogleFCM,美国节点
   - RULE-SET,SteamFix,DIRECT
+
   - DOMAIN,services.googleapis.cn,选择代理
 
-  - DOMAIN-SUFFIX,hxcy.top,台湾节点
+  - DOMAIN-SUFFIX,sankakucomplex.com,台湾节点
   - DOMAIN-SUFFIX,f95zone.to,美国节点
-  - DOMAIN-SUFFIX,aki-game.net,新加坡节点
-  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,选择代理
+  - DOMAIN-SUFFIX,kemono.cr,选择代理
+  - DOMAIN-SUFFIX,cdn-akamai-hw-mc.aki-game.net,美国节点
+  - DOMAIN-SUFFIX,kurogames-global.com,美国节点
+  - DOMAIN-SUFFIX,gelbooru.com,美国节点
 
 
-  - DOMAIN-KEYWORD,perfectworld.com,DIRECT
-  - DOMAIN-KEYWORD,dlsite,日本节点
+  - DOMAIN-KEYWORD,xn--ngstr-lra8j.com,选择代理
+  - DOMAIN-KEYWORD,perfectworld.com,香港节点
+  - DOMAIN-KEYWORD,dlsite,美国节点
+
+
+  
 
 
   # 5. GeoSite 规则 (域名类)
