@@ -1,4 +1,4 @@
-# 实验性功能: TCP 并发连接 (提高握手成功率)
+# === 实验性功能: TCP 并发连接 (提高握手成功率) ===
 experimental:
   tcp-concurrent: true
 
@@ -13,13 +13,18 @@ dns:
   fake-ip-filter-mode: blacklist
   respect-rules: true
 
-  # === 默认 DNS (主 DNS，用于解析国内域名) ===
+  # === 默认解析 DNS (用于解析 DoH/DoT 服务域名本身) ===
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+
+  # === 主 DNS (用于解析国内域名) ===
   nameserver:
     - "https://dns.alidns.com/dns-query" # 阿里 DoH
     - "https://doh.pub/dns-query"        # 腾讯 DoH
     - "tls://223.5.5.5"                  # 阿里 DoT (作为 HTTP/3 回退保障)
 
-  # === 备用 DNS (Fallback，专用于解析国外被墙域名，当 nameserver 返回非 CN IP 时，采用这里的无污染结果)
+  # === 备用 DNS (Fallback，专用于解析国外被墙域名) ===
   fallback:
     - "https://1.1.1.1/dns-query"
     - "https://8.8.8.8/dns-query"
@@ -38,7 +43,6 @@ dns:
       - "+.youtube.com"
 
   # === 核心策略: DNS 分流 ===
-  # 作用: 针对特定域名，强制使用特定 DNS 解析，跳过主/备 DNS 的判定逻辑，做到极致的低延迟。
   nameserver-policy:
     # 1. 网络连通性探测 (Captive Portal) -> 走系统 DNS
     "+.msftncsi.com": system
@@ -66,7 +70,6 @@ dns:
     - 119.29.29.29      # 腾讯
 
   # === Fake-IP 过滤列表 (返回真实 IP) ===
-  # 作用: 解决由 Fake-IP 导致的局域网无法访问、游戏 NAT 类型严格等问题
   fake-ip-filter:
     # --- 局域网 & 常见路由器后台 ---
     - +.lan
@@ -83,12 +86,18 @@ dns:
     - tendawifi.com        # 腾达路由器
     - p.to                 # 迅捷路由器
 
+    # --- 常用直连 & 通讯服务防护 ---
+    - "*.market.xiaomi.com"
+    - "+.qq.com"
+    - "+.tencent.com"
+    - "+.weixin.qq.com"
+    - "+.alipay.com"
+
     # --- AdGuard & 安全 ---
     - injections.adguard.org
     - local.adguard.org
 
     # --- 网络连通性探测 (解决公共 WiFi 无法弹出登录页的问题) ---
-    # Windows/Apple/Google/Android/MIUI
     - +.msftncsi.com
     - +.msftconnecttest.com
     - captive.apple.com
@@ -96,7 +105,7 @@ dns:
     - connectivitycheck.android.com
     - connect.rom.miui.com
 
-    # --- 游戏 STUN & NAT 优化 (统一改用更规范的 +. 语法) ---
+    # --- 游戏 STUN & NAT 优化 ---
     - +.srv.nintendo.net
     - +.stun.playstation.net
     - +.xboxlive.com
@@ -114,7 +123,7 @@ dns:
     - time.apple.com
     - time.asia.apple.com
 
-    # --- 开发者 / 泛域名映射 (直接放行根域名，替换原来复杂的通配符) ---
+    # --- 开发者 / 泛域名映射 ---
     - +.sslip.io
     - +.nip.io
     - 127.atlas.skk.moe
@@ -195,7 +204,7 @@ proxy-groups:
       - 手动选择
       - 其他国家节点
 
-  # === 自动测速组 (统一配置: 优化测速机制) ===
+  # === 自动测速组 ===
   - name: 香港节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png
     include-all: true
@@ -205,7 +214,7 @@ proxy-groups:
     interval: 300
     tolerance: 50
     unified-delay: true
-    lazy: false
+    lazy: true
 
   - name: 台湾节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png
@@ -323,41 +332,34 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/DMM/DMM.list
     path: ./ruleset/DMM.list
 
+
 rules:
-  # 0. 阻断 QUIC: 强制使用 TCP 协议，保证流量能被代理正确嗅探和加速
-  - AND,(DST-PORT,443),(NETWORK,UDP),REJECT
-  
-  # 1. 局域网/本地流量直连
+  # 1. 局域网/本地流量直连（最高优先级）
   - GEOSITE,PRIVATE,DIRECT
   - GEOIP,PRIVATE,DIRECT,no-resolve
 
   # 2. 广告拦截
   - RULE-SET,ADBlock,REJECT
   - RULE-SET,AdditionalFilter,REJECT
+  - RULE-SET,SteamFix,DIRECT
 
-  # 3. 特殊应用 & 自定义域名
+  # 3. 仅对代理/外网流量阻断 QUIC / UDP 443（避免影响局域网和国内 STUN）
+  - AND,(DST-PORT,443),(NETWORK,UDP),REJECT
+
+  # 4. 特殊应用 & 自定义域名
   - RULE-SET,EHentai,美国节点
   - RULE-SET,DMM,日本节点
   - RULE-SET,GoogleFCM,美国节点
-  - RULE-SET,SteamFix,DIRECT
-
   - DOMAIN,services.googleapis.cn,选择代理
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,选择代理
 
   - DOMAIN-SUFFIX,sankakucomplex.com,台湾节点
   - DOMAIN-SUFFIX,f95zone.to,美国节点
-  - DOMAIN-SUFFIX,kemono.cr,选择代理
-  - DOMAIN-SUFFIX,cdn-akamai-hw-mc.aki-game.net,美国节点
-  - DOMAIN-SUFFIX,kurogames-global.com,美国节点
+  - DOMAIN-SUFFIX,cdn-akamai-hw-mc.aki-game.net,新加坡节点
+  - DOMAIN-SUFFIX,kurogames-global.com,台湾节点
   - DOMAIN-SUFFIX,gelbooru.com,美国节点
-
-
-  - DOMAIN-KEYWORD,xn--ngstr-lra8j.com,选择代理
-  - DOMAIN-KEYWORD,perfectworld.com,香港节点
-  - DOMAIN-KEYWORD,dlsite,美国节点
-
-
-  
-
+  - DOMAIN-SUFFIX,cdn-aws-hw-mc.aki-game.net,新加坡节点
+  - DOMAIN-KEYWORD,dlsite,选择代理
 
   # 5. GeoSite 规则 (域名类)
   - GEOSITE,GOOGLE,选择代理
@@ -374,5 +376,5 @@ rules:
   - GEOIP,TELEGRAM,Telegram,no-resolve
   - GEOIP,CN,DIRECT,no-resolve
 
-  # 7. 最终兜底 (全局默认代理)
+  # 7. 最终兜底
   - MATCH,选择代理
