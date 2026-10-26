@@ -381,9 +381,10 @@ rules:
 
   - DOMAIN-SUFFIX,f95zone.to,美国节点
   - DOMAIN-SUFFIX,gelbooru.com,美国节点
-  - DOMAIN-KEYWORD,dlsite,日本节点
+  - DOMAIN-SUFFIX,ci-en.dlsite.com,选择节点
+  - DOMAIN-KEYWORD,dlsite,日本代理
 
-  - DOMAIN-SUFFIX,mypikpak.com,日本节点
+  - DOMAIN-SUFFIX,mypikpak.com,其他国家节点
   - DOMAIN-SUFFIX,kurogames-global.com,选择代理
   - DOMAIN-KEYWORD,aki-game.net,选择代理
 
