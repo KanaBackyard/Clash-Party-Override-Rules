@@ -289,16 +289,12 @@ geodata-mode: true
 geo-auto-update: true
 # 更新间隔（小时）。24 = 每天一次。
 geo-update-interval: 24
-# 数据库下载源（jsdelivr CDN）。电信下偶尔慢，拉不动可换镜像，不影响启动。
+# 数据库下载源
 geox-url:
-  # GeoIP 国家/地区 IP 段数据库
-  geoip: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
-  # GeoSite 域名分类数据库（cn / gfw / google / apple 等）
-  geosite: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
-  # MMDB 格式的国家数据库（geodata-mode 关闭时用）
-  mmdb: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb"
-  # ASN 数据库（IP-ASN 规则用）
-  asn: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
+  geoip:   "https://cdn.jsdmirror.com/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
+  geosite: "https://cdn.jsdmirror.com/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
+  mmdb:    "https://cdn.jsdmirror.com/gh/MetaCubeX/meta-rules-dat@release/country.mmdb"
+  asn:     "https://cdn.jsdmirror.com/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
 
 # ==============================================================================
 # 五、分流组
@@ -334,25 +330,12 @@ proxy-groups:
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
     url: "http://www.gstatic.com/generate_204"
     expected-status: 204
-    interval: 300
-    tolerance: 80
+    interval: 120
+    tolerance: 50
     lazy: true
 
   - name: YouTube
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png
-    type: select
-    proxies:
-      - 香港节点
-      - 台湾节点
-      - 日本节点
-      - 韩国节点
-      - 新加坡节点
-      - 美国节点
-      - 手动选择
-      - 其他国家节点
-
-  - name: Telegram
-    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png
     type: select
     proxies:
       - 香港节点
@@ -548,15 +531,15 @@ rules:
   - RULE-SET,SteamFix,选择代理
   - DOMAIN,services.googleapis.cn,选择代理
   - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,选择代理
+  - DOMAIN-SUFFIX,kurogames-global.com,选择代理
+  - DOMAIN-KEYWORD,aki-game.net,选择代理
 
   - DOMAIN-SUFFIX,f95zone.to,美国节点
   - DOMAIN-SUFFIX,gelbooru.com,美国节点
   - DOMAIN-KEYWORD,dlsite,日本节点
+  - DOMAIN-SUFFIX,hxcy.top,其他国家节点
+  - DOMAIN-SUFFIX,hanime1.me,台湾节点
 
-  - DOMAIN-SUFFIX,hxcy.top,非日韩节点
-  - DOMAIN-SUFFIX,hanime1.me,非日韩节点
-  - DOMAIN-SUFFIX,kurogames-global.com,选择代理
-  - DOMAIN-KEYWORD,aki-game.net,选择代理
 
   # ---------- 4. AI / 开发服务 ----------
   - DOMAIN-SUFFIX,openai.com,选择代理
@@ -577,7 +560,7 @@ rules:
 
   # ---------- 5. GeoSite 域名分类规则 ----------
   - GEOSITE,GOOGLE,选择代理
-  - GEOSITE,TELEGRAM,Telegram
+  - GEOSITE,TELEGRAM,选择代理
   - GEOSITE,YOUTUBE,YouTube
   - GEOSITE,GFW,选择代理
   - GEOSITE,MICROSOFT@CN,DIRECT
@@ -590,7 +573,7 @@ rules:
 
   # ---------- 6. GeoIP 兜底 ----------
   - GEOIP,GOOGLE,选择代理,no-resolve
-  - GEOIP,TELEGRAM,Telegram,no-resolve
+  - GEOIP,TELEGRAM,选择代理,no-resolve
   - GEOIP,CN,DIRECT,no-resolve
 
   # ---------- 7. 拦截 UDP/443（QUIC）----------
