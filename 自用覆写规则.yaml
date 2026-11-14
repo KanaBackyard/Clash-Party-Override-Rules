@@ -1,136 +1,149 @@
-# 实验性功能: TCP 并发连接 (提高握手成功率)
-experimental:
-  tcp-concurrent: true
+# ============================================================
+# --- 基础监听 ---
+# ============================================================
+# 注意：Clash Verge 会在「设置 → 端口」里覆盖 mixed-port，想换端口请改 Verge 的设置，改这里不生效。
+mixed-port: 7897
+allow-lan: false
+bind-address: 127.0.0.1
+mode: rule
+log-level: info
+ipv6: false                # 与 dns下的ipv6 保持一致，避免空等
+unified-delay: true        # 统一延迟口径，组内延迟才可比
+tcp-concurrent: true
+find-process-mode: off     # 没有 PROCESS 项，关掉可减少 Windows 系统调用开销
+profile:
+  store-fake-ip: true
 
-# === DNS 配置 ===
+# ============================================================
+# --- DNS ---
+# ============================================================
 dns:
   enable: true
-  ipv6: true
-  prefer-h3: true
+  ipv6: false
+  prefer-h3: false
+  use-hosts: true
   use-system-hosts: true
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
   fake-ip-filter-mode: blacklist
   respect-rules: true
 
-  # === 默认 DNS (主 DNS，用于解析国内域名) ===
+  # 引导 DNS：只用于解析 DoH 服务器域名，必须是纯 IP
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+
+  # 主 DNS：UDP 优先，DoH 作备用。
   nameserver:
-    - "https://dns.alidns.com/dns-query" # 阿里 DoH
-    - "https://doh.pub/dns-query"        # 腾讯 DoH
-    - "tls://223.5.5.5"                  # 阿里 DoT (作为 HTTP/3 回退保障)
+    - 223.5.5.5                          # 阿里
+    - 119.29.29.29                       # 腾讯
+    - "https://223.5.5.5/dns-query"      # 阿里 DoH
+    - "https://1.12.12.12/dns-query"     # 腾讯 DoH
 
-  # === 备用 DNS (Fallback，专用于解析国外被墙域名，当 nameserver 返回非 CN IP 时，采用这里的无污染结果)
-  fallback:
-    - "https://dns.adguard-dns.com/dns-query"
-    - "https://dns.google/dns-query"
-    - "https://cloudflare-dns.com/dns-query"
-    - "tls://8.8.4.4"
-
-  # === 备用 DNS 启用条件 (防污染验证机制) ===
-  fallback-filter:
-    geoip: true
-    geoip-code: CN
-    ipcidr:
-      - 240.0.0.0/4
-    domain:
-      - "+.google.com"
-      - "+.facebook.com"
-      - "+.twitter.com"
-      - "+.youtube.com"
-
-  # === 核心策略: DNS 分流 ===
-  # 作用: 针对特定域名，强制使用特定 DNS 解析，跳过主/备 DNS 的判定逻辑，做到极致的低延迟。
-  nameserver-policy:
-    # 1. 网络连通性探测 (Captive Portal) -> 走系统 DNS
-    "+.msftncsi.com": system
-    "+.msftconnecttest.com": system
-    "captive.apple.com": system
-    "connectivitycheck.*.com": system
-    "connect.rom.miui.com": system
-
-    # 2. 时间同步 (NTP) & 游戏穿透 (STUN) -> 走系统 DNS
-    "+.pool.ntp.org": system
-    "time.*.com": system
-    "time.*.gov": system
-    "time.*.apple.com": system
-    "stun.*": system
-    "+.stun.*.*": system
-
-    # 3. 强制直连加密 DNS
-    "geosite:cn,private,apple,microsoft@cn,category-games@cn":
-      - "https://223.5.5.5/dns-query"       # 阿里 DoH
-      - "https://1.12.12.12/dns-query"      # 腾讯 DoH (备用)
-
-  # === 代理节点 DNS (专门负责解析机场/节点域名) ===
+  # 解析机场/节点域名用：必须直连可达。
   proxy-server-nameserver:
     - 223.5.5.5
     - 119.29.29.29
-    - https://dns.alidns.com/dns-query
-    - 8.8.8.8                    
+    - "https://223.5.5.5/dns-query"
 
-  # === Fake-IP 过滤列表 (返回真实 IP) ===
-  # 作用: 解决由 Fake-IP 导致的局域网无法访问、游戏 NAT 类型严格等问题
+  nameserver-policy:
+    # 连通性探测 / NTP 走系统 DNS，避免公共 WiFi 登录页弹不出来
+    "+.msftncsi.com": system
+    "+.msftconnecttest.com": system
+    "captive.apple.com": system
+    "connectivitycheck.gstatic.com": system
+    "connectivitycheck.android.com": system
+    "connect.rom.miui.com": system
+    "+.pool.ntp.org": system
+    "time.windows.com": system
+    "time.cloudflare.com": system
+
+    # 国内域名固定国内 DNS：一条一个 geosite，语义清晰
+    "geosite:cn":
+      - 223.5.5.5
+      - 119.29.29.29
+    "geosite:private":
+      - 223.5.5.5
+      - 119.29.29.29
+    "geosite:apple":
+      - 223.5.5.5
+      - 119.29.29.29
+    "geosite:microsoft@cn":
+      - 223.5.5.5
+      - 119.29.29.29
+    "geosite:category-games@cn":
+      - 223.5.5.5
+      - 119.29.29.29
+
   fake-ip-filter:
-    # --- 局域网 & 常见路由器后台 ---
-    - +.lan
-    - +.local
-    - +.internal
-    - +.localdomain
-    - +.home.arpa
-    - +.bogon
-    - +.m2m
+    # 局域网 / 路由后台
+    - "geosite:private"
+    - "+.lan"
+    - "+.local"
+    - "+.internal"
+    - "+.localdomain"
+    - "+.home.arpa"
+    - "+.bogon"
+    - "+.m2m"
     - localhost
-    - router.asus.com      # 华硕路由器
-    - miwifi.com           # 小米路由器
-    - tplogin.cn           # TP-Link 路由器
-    - tendawifi.com        # 腾达路由器
-    - p.to                 # 迅捷路由器
+    - router.asus.com
+    - miwifi.com
+    - tplogin.cn
+    - tendawifi.com
+    - p.to
 
-    # --- AdGuard & 安全 ---
+    # AdGuard
     - injections.adguard.org
     - local.adguard.org
 
-    # --- 网络连通性探测 (解决公共 WiFi 无法弹出登录页的问题) ---
-    # Windows/Apple/Google/Android/MIUI
-    - +.msftncsi.com
-    - +.msftconnecttest.com
+    # 网络连通性探测
+    - "+.msftncsi.com"
+    - "+.msftconnecttest.com"
     - captive.apple.com
     - connectivitycheck.gstatic.com
     - connectivitycheck.android.com
     - connect.rom.miui.com
 
-    # --- 游戏 STUN & NAT 优化 (统一改用更规范的 +. 语法) ---
-    - +.srv.nintendo.net
-    - +.stun.playstation.net
-    - +.xboxlive.com
-    - xbox.*.microsoft.com
-    - +.battlenet.com.cn
-    - +.turn.twilio.com
-    - +.stun.twilio.com
+    # 游戏 STUN / NAT
+    - "+.srv.nintendo.net"
+    - "+.stun.playstation.net"
+    - "+.xboxlive.com"
+    - "xbox.*.microsoft.com"
+    - "+.battlenet.com.cn"
+    - "+.turn.twilio.com"
+    - "+.stun.twilio.com"
     - stun.syncthing.net
-    - stun.*
+    - stun.l.google.com
+    - stun.cloudflare.com
 
-    # --- NTP 时间同步 ---
-    - +.pool.ntp.org       # 统一使用 +. 包含所有 pool
+    # NTP
+    - "+.pool.ntp.org"
     - time.windows.com
     - time.nist.gov
     - time.apple.com
-    - time.asia.apple.com  # 补充苹果亚洲时间服务器
+    - time.asia.apple.com
+    - time.cloudflare.com
 
-    # --- 开发者 / 泛域名映射 (直接放行根域名，替换原来复杂的通配符) ---
-    - +.sslip.io
-    - +.nip.io
+    # 开发者泛域名
+    - "+.sslip.io"
+    - "+.nip.io"
     - 127.atlas.skk.moe
 
-# === 域名嗅探 ===
+# ============================================================
+# --- 域名嗅探 ---
+# ============================================================
 sniffer:
   enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  override-destination: true
   sniff:
     HTTP:
       ports: [80, 8080-8880]
       override-destination: true
     TLS:
       ports: [443, 8443]
+      override-destination: true
     QUIC:
       ports: [443, 8443]
   skip-domain:
@@ -144,7 +157,7 @@ sniffer:
     - "+.lan"
     - "+.home.arpa"
 
-# === GeoData 模式 ===
+# --- GeoData ---
 geodata-mode: true
 geo-auto-update: true
 geo-update-interval: 24
@@ -154,19 +167,19 @@ geox-url:
   mmdb: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb"
   asn: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
 
-# === 分流组 ===
+# ============================================================
+# --- 分流组 ---
+# ============================================================
 proxy-groups:
-
-
   - name: 选择代理
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png
     type: select
     proxies:
       - 香港节点
       - 台湾节点
+      - 日本节点
       - 韩国节点
       - 新加坡节点
-      - 日本节点
       - 美国节点
       - 自动选择
       - 手动选择
@@ -175,17 +188,20 @@ proxy-groups:
 
   - name: 手动选择
     icon: https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash@master/icon/select.png
-    include-all: true
     type: select
-
-  - name: "自动选择"
-    type: url-test
-    icon: https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash@master/icon/urltest.png
-    url: 'http://www.gstatic.com/generate_204'
     include-all: true
-    interval: 180
-    tolerance: 50
-    exclude-type: "AnyTLS|anytls"
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+
+  - name: 自动选择
+    icon: https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash@master/icon/urltest.png
+    type: url-test
+    include-all: true
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
+    interval: 300
+    tolerance: 80
+    lazy: true
 
   - name: YouTube
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png
@@ -193,9 +209,9 @@ proxy-groups:
     proxies:
       - 香港节点
       - 台湾节点
+      - 日本节点
       - 韩国节点
       - 新加坡节点
-      - 日本节点
       - 美国节点
       - 手动选择
       - 其他国家节点
@@ -206,116 +222,110 @@ proxy-groups:
     proxies:
       - 香港节点
       - 台湾节点
+      - 日本节点
       - 韩国节点
       - 新加坡节点
-      - 日本节点
       - 美国节点
       - 手动选择
       - 其他国家节点
 
-  # === 自动测速组 (统一配置: 优化测速机制) ===
   - name: 香港节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png
-    include-all: true
-    filter: (?i)香港|港|HK|hk|Hong Kong|HongKong|hongkong|🇭🇰
     type: url-test
-    url: http://www.gstatic.com/generate_204
+    include-all: true
+    filter: "(?i)香港|港|HK|hk|Hong Kong|HongKong|hongkong|🇭🇰"
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
     interval: 300
     tolerance: 50
-    unified-delay: true
     lazy: false
-    exclude-type: "AnyTLS|anytls"
 
   - name: 台湾节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png
-    include-all: true
-    filter: (?i)台|新北|彰化|TW|Taiwan|🇹🇼
     type: url-test
-    url: http://www.gstatic.com/generate_204
+    include-all: true
+    filter: "(?i)台|新北|彰化|TW|Taiwan|🇹🇼"
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
     interval: 300
     tolerance: 50
-    unified-delay: true
     lazy: true
-    exclude-type: "AnyTLS|anytls"
-
-  - name: 韩国节点
-    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Korea.png
-    include-all: true
-    filter: (?i)韩国|韩|KR|Korea|🇰🇷
-    type: url-test
-    url: http://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 50
-    unified-delay: true
-    lazy: true
-    exclude-type: "AnyTLS|anytls"
-
-  - name: 新加坡节点
-    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Singapore.png
-    include-all: true
-    filter: (?i)新加坡|坡|狮城|SG|Singapore|🇸🇬
-    type: url-test
-    url: http://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 50
-    unified-delay: true
-    lazy: true
-    exclude-type: "AnyTLS|anytls"
 
   - name: 日本节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Japan.png
-    include-all: true
-    filter: (?i)日本|川日|东京|大阪|泉日|埼玉|沪日|深日|JP|Japan|🇯🇵
     type: url-test
-    url: http://www.gstatic.com/generate_204
+    include-all: true
+    filter: "(?i)日本|川日|东京|大阪|泉日|埼玉|沪日|深日|JP|Japan|🇯🇵"
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
     interval: 300
     tolerance: 50
-    unified-delay: true
     lazy: true
-    exclude-type: "AnyTLS|anytls"
+
+  - name: 韩国节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Korea.png
+    type: url-test
+    include-all: true
+    filter: "(?i)韩国|韩|KR|Korea|🇰🇷"
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
+    interval: 300
+    tolerance: 50
+    lazy: true
+
+  - name: 新加坡节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Singapore.png
+    type: url-test
+    include-all: true
+    filter: "(?i)新加坡|坡|狮城|SG|Singapore|🇸🇬"
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
+    interval: 300
+    tolerance: 50
+    lazy: true
 
   - name: 美国节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png
-    include-all: true
-    filter: (?i)美国|美|US|United States|🇺🇸
     type: url-test
-    url: http://www.gstatic.com/generate_204
+    include-all: true
+    filter: "(?i)美国|美|US|United States|🇺🇸"
+    exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
     interval: 300
     tolerance: 50
-    unified-delay: true
     lazy: true
-    exclude-type: "AnyTLS|anytls"
 
   - name: 其他国家节点
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bot.png
-    include-all: true
-    exclude-filter: "(?i)香港|Hong Kong|HK|日本|Japan|JP|台湾|Taiwan|TW|中国|China|CN|美国|United States|US|新加坡|Singapore|SG|韩国|韩|KR|Korea|🇰🇷|剩余|到期|排除|过滤"
     type: url-test
-    url: http://www.gstatic.com/generate_204
+    include-all: true
+    exclude-filter: "(?i)香港|Hong Kong|HK|日本|Japan|JP|台湾|Taiwan|TW|中国|China|CN|美国|United States|US|新加坡|Singapore|SG|韩国|韩|KR|Korea|🇰🇷|剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用|排除|过滤"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
     interval: 300
     tolerance: 50
-    unified-delay: true
     lazy: true
-    exclude-type: "AnyTLS|anytls"
 
-  - name: GLOBAL
-    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png
+  - name: 非日韩节点
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bot.png
+    type: url-test
     include-all: true
-    type: select
-    proxies:
-      - 选择代理
-      - 手动选择
-      - Telegram
-      - YouTube
-      - 香港节点
-      - 台湾节点
-      - 韩国节点
-      - 新加坡节点
-      - 日本节点
-      - 美国节点
-      - 其他国家节点
+    exclude-filter: "(?i)日本|Japan|JP|韩国|韩|KR|Korea|🇰🇷|剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用|排除|过滤"
+    url: "http://www.gstatic.com/generate_204"
+    expected-status: 204
+    interval: 300
+    tolerance: 50
+    lazy: true
 
-# === 分流规则提供 ===
+# ============================================================
+# --- 规则集 ---
+# ============================================================
 rule-providers:
   ADBlock:
     type: http
@@ -361,14 +371,18 @@ rule-providers:
     path: ./ruleset/DMM.list
 
 rules:
-  # 0. 阻断 QUIC: 强制使用 TCP 协议，保证流量能被代理正确嗅探和加速
-  - AND,(DST-PORT,443),(NETWORK,UDP),REJECT
-  
-  # 1. 局域网/本地流量直连
+  # 1. 局域网 / 本机 / 电信 CGNAT 直连（先于 QUIC 拦截，避免误伤投屏、NAS）
   - GEOSITE,PRIVATE,DIRECT
-  - GEOIP,PRIVATE,DIRECT,no-resolve
+  - GEOIP,LAN,DIRECT,no-resolve
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,100.64.0.0/10,DIRECT,no-resolve
+  - IP-CIDR6,fc00::/7,DIRECT,no-resolve
+  - IP-CIDR6,fe80::/10,DIRECT,no-resolve
 
-  # 2. 广告拦截
+  # 2. 广告
   - RULE-SET,ADBlock,REJECT
   - RULE-SET,AdditionalFilter,REJECT
 
@@ -376,33 +390,56 @@ rules:
   - RULE-SET,EHentai,美国节点
   - RULE-SET,DMM,日本节点
   - RULE-SET,GoogleFCM,选择代理
+  - RULE-SET,SteamFix,选择代理
   - DOMAIN,services.googleapis.cn,选择代理
   - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,选择代理
 
   - DOMAIN-SUFFIX,f95zone.to,美国节点
   - DOMAIN-SUFFIX,gelbooru.com,美国节点
-  - DOMAIN-SUFFIX,ci-en.dlsite.com,选择节点
-  - DOMAIN-KEYWORD,dlsite,日本代理
+  - DOMAIN-KEYWORD,dlsite,日本节点
 
-  - DOMAIN-SUFFIX,mypikpak.com,其他国家节点
+  - DOMAIN-SUFFIX,hxcy.top,非日韩节点
+  - DOMAIN-SUFFIX,hanime1.me,非日韩节点
   - DOMAIN-SUFFIX,kurogames-global.com,选择代理
   - DOMAIN-KEYWORD,aki-game.net,选择代理
 
+  # 4. AI / 开发服务
+  - DOMAIN-SUFFIX,openai.com,选择代理
+  - DOMAIN-SUFFIX,oaistatic.com,选择代理
+  - DOMAIN-SUFFIX,oaiusercontent.com,选择代理
+  - DOMAIN-SUFFIX,chatgpt.com,选择代理
+  - DOMAIN-SUFFIX,anthropic.com,选择代理
+  - DOMAIN-SUFFIX,claude.ai,选择代理
+  - DOMAIN-SUFFIX,gemini.google.com,选择代理
+  - DOMAIN-SUFFIX,aistudio.google.com,选择代理
+  - DOMAIN-SUFFIX,cursor.sh,选择代理
+  - DOMAIN-SUFFIX,cursor.com,选择代理
+  - DOMAIN-SUFFIX,github.com,选择代理
+  - DOMAIN-SUFFIX,githubusercontent.com,选择代理
+  - DOMAIN-SUFFIX,githubassets.com,选择代理
+  - DOMAIN-SUFFIX,copilot.microsoft.com,选择代理
+  - DOMAIN-SUFFIX,copilot.cloud.microsoft.com,选择代理
 
-  # 5. GeoSite 规则 (域名类)
+  # 5. GeoSite 规则
   - GEOSITE,GOOGLE,选择代理
   - GEOSITE,TELEGRAM,Telegram
   - GEOSITE,YOUTUBE,YouTube
   - GEOSITE,GFW,选择代理
-  - GEOSITE,BILIBILI,DIRECT
   - GEOSITE,MICROSOFT@CN,DIRECT
+  - GEOSITE,MICROSOFT,DIRECT
   - GEOSITE,APPLE,DIRECT
+  - GEOSITE,BILIBILI,DIRECT
+  - GEOSITE,STEAM@CN,DIRECT
+  - GEOSITE,STEAM,选择代理
   - GEOSITE,CN,DIRECT
 
-  # 6. GeoIP 规则 (IP类，作为兜底)
+  # 6. GeoIP 兜底
   - GEOIP,GOOGLE,选择代理,no-resolve
   - GEOIP,TELEGRAM,Telegram,no-resolve
   - GEOIP,CN,DIRECT,no-resolve
 
-  # 7. 最终兜底 (全局默认代理)
+  # 7. 拦截 UDP/443（QUIC）
+  - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
+
+  # 8. 最终兜底
   - MATCH,选择代理
