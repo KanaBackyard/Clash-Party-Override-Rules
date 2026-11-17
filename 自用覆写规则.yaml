@@ -29,12 +29,17 @@ tcp-concurrent: true
 # 进程匹配模式：always（强制匹配）/ strict（按需）/ off（完全不匹配）。关掉可省掉 Windows 上的系统调用开销。
 find-process-mode: off
 
+# 【新增】全局连接超时时间（毫秒），建议显式指定为 3000 或 5000（即 3-5 秒），
+# 避免电信网络卡顿时，内核无限制地等待某个死掉的 IP 握手
+timeout: 5000
+
 # 配置文件相关
 profile:
   # 重启后记住上次手动选择的节点，不会跳回默认（强烈建议开启）。
   store-selected: true
   # 重启后保留 fake-ip 映射表，减少重连后的 DNS 重复查询。
   store-fake-ip: true
+
 
 # ==============================================================================
 # 二、DNS
@@ -328,7 +333,7 @@ proxy-groups:
     type: url-test
     include-all: true
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 120
     tolerance: 50
@@ -353,7 +358,7 @@ proxy-groups:
     include-all: true
     filter: "(?i)香港|港|HK|hk|Hong Kong|HongKong|hongkong|🇭🇰"
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -365,7 +370,7 @@ proxy-groups:
     include-all: true
     filter: "(?i)台|新北|彰化|TW|Taiwan|🇹🇼"
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -377,7 +382,7 @@ proxy-groups:
     include-all: true
     filter: "(?i)日本|川日|东京|大阪|泉日|埼玉|沪日|深日|JP|Japan|🇯🇵"
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -389,7 +394,7 @@ proxy-groups:
     include-all: true
     filter: "(?i)韩国|韩|KR|Korea|🇰🇷"
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -401,7 +406,7 @@ proxy-groups:
     include-all: true
     filter: "(?i)新加坡|坡|狮城|SG|Singapore|🇸🇬"
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -413,7 +418,7 @@ proxy-groups:
     include-all: true
     filter: "(?i)美国|美|US|United States|🇺🇸"
     exclude-filter: "(?i)剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -424,7 +429,7 @@ proxy-groups:
     type: url-test
     include-all: true
     exclude-filter: "(?i)香港|Hong Kong|HK|日本|Japan|JP|台湾|Taiwan|TW|中国|China|CN|美国|United States|US|新加坡|Singapore|SG|韩国|韩|KR|Korea|🇰🇷|剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用|排除|过滤"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -435,7 +440,7 @@ proxy-groups:
     type: url-test
     include-all: true
     exclude-filter: "(?i)日本|Japan|JP|韩国|韩|KR|Korea|🇰🇷|剩余|到期|官网|订阅|流量|过期|重置|客服|欢迎|套餐|试用|排除|过滤"
-    url: "http://www.gstatic.com/generate_204"
+    url: "https://cp.cloudflare.com/generate_204"
     expected-status: 204
     interval: 300
     tolerance: 50
@@ -537,7 +542,7 @@ rules:
   - DOMAIN-SUFFIX,f95zone.to,美国节点
   - DOMAIN-SUFFIX,gelbooru.com,美国节点
   - DOMAIN-KEYWORD,dlsite,日本节点
-  - DOMAIN-SUFFIX,hxcy.top,其他国家节点
+  - DOMAIN-SUFFIX,hxcy.top,非日韩节点
   - DOMAIN-SUFFIX,hanime1.me,台湾节点
 
 
@@ -576,11 +581,5 @@ rules:
   - GEOIP,TELEGRAM,选择代理,no-resolve
   - GEOIP,CN,DIRECT,no-resolve
 
-  # ---------- 7. 拦截 UDP/443（QUIC）----------
-  # 放在国内直连之后：只封「会走代理」的那部分 QUIC，强制回落 TCP。
-  # 好处：规避对 UDP 的限速/QoS，且机场的 UDP 转发普遍不稳定。
-  # 副作用：纯 IP 访问且前面都没命中的站点，QUIC 也会被挡，浏览器会自动回落 TCP，功能不受影响。
-  - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
-
-  # ---------- 8. 最终兜底 ----------
+  # ---------- 7. 最终兜底 ----------
   - MATCH,选择代理
